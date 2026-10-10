@@ -1,56 +1,42 @@
 # Bicutan Bible Church – Word Chain Reaction (online edition)
 
-A fellowship game-show / icebreaker website. The page is hosted free on **GitHub Pages**, and all accounts, game files, winners history and branding are stored in a free **Supabase** database (a spreadsheet-style online database, like Airtable), so everything is shared across every phone, tablet and computer.
+A fellowship game-show / icebreaker website. It is hosted free on **GitHub Pages**, and all accounts, game files, winners history and branding are stored in a free **Supabase** database, so everything is shared across every device.
 
-Files in this package:
-
-| File | What it is |
+## Files
+| File | Purpose |
 |---|---|
-| `index.html` | The whole website |
-| `config.js` | Where you paste your database URL and key (Step 3) |
-| `setup.sql` | Creates the database tables and rules (Step 2) |
+| `index.html` | Page skeleton (loads the other files) |
+| `style.css` | All colours, layout and animations (commented by section) |
+| `app.js` | All the logic: login, library, studio, admin, game stage (commented function by function) |
+| `config.js` | **You edit this**: your Supabase URL and public key |
+| `setup.sql` | Run once in Supabase to create the tables and security rules |
 
-## Step 1 – Create the database (5 min)
-1. Go to https://supabase.com, sign up (free) and click **New project**. Choose any name and a database password, pick a region near the Philippines (e.g. Singapore), then wait about 2 minutes.
+## Set-up (once)
+1. Create a free project at https://supabase.com.
+2. **SQL Editor → New query**: paste all of `setup.sql` and click **Run**. (Already ran it earlier? You do not need to run it again: this version uses the same database.)
+3. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `config.js`. The URL must look like `https://abcdxyz.supabase.co` only (no `/rest/v1`, not the dashboard link). Never use the `service_role` key.
+4. Create a **Public** GitHub repository, upload `index.html`, `style.css`, `app.js`, `config.js` and `README.md` (unzip first; `setup.sql` is optional), then **Settings → Pages → Deploy from a branch → main / (root)**.
+5. Your site is live at `https://YOUR-USERNAME.github.io/REPOSITORY-NAME/`.
 
-## Step 2 – Create the tables
-1. In your project, open **SQL Editor → New query**.
-2. Open `setup.sql` from this package, copy everything, paste it in, and click **Run**. You should see "Success".
-3. (Optional) Open **Table Editor** to see your data in spreadsheet-style tables: `app_users`, `app_games`, `app_settings`.
-
-## Step 3 – Connect the website
-1. In Supabase open **Project Settings → API**.
-2. Copy the **Project URL** and the **anon public** key.
-3. Open `config.js` and paste them between the quotes:
-   ```js
-   SUPABASE_URL: "https://abcdxyz.supabase.co",
-   SUPABASE_ANON_KEY: "eyJhbGciOi..."
-   ```
-   (Never use the `service_role` key here.)
-
-## Step 4 – Upload to GitHub and go online
-1. Unzip this package. GitHub does not unpack zips, so upload the files inside it.
-2. On https://github.com/new create a **Public** repository (e.g. `word-chain-reaction`).
-3. Click **uploading an existing file**, drag in `index.html`, `config.js` and `README.md` (`setup.sql` is optional), then **Commit changes**.
-4. Go to **Settings → Pages**, set Source to *Deploy from a branch*, branch **main**, folder **/ (root)**, and Save.
-5. After about a minute your site is live for anyone at `https://YOUR-USERNAME.github.io/REPOSITORY-NAME/`.
-
-To change anything later: open the file in GitHub, click the pencil icon, edit, and commit.
+Updating later: open a file on GitHub, click the pencil, edit, commit. If you still see the old version, hard refresh (Ctrl+F5).
 
 ## First login
-- Username `haidezu`, password `qwerty5575` (Admin).
-- **Immediately** open **Admin → Account Management → Change password** and set your own. The default password is also in `setup.sql`, so do not leave it.
-- New members register on the login page and appear in the Admin panel as *Pending approval* (with a 🔔 on the Admin button). Approve, disable, reset or delete them there.
-- Guests only need a nickname. They can play but not save games.
+Username `haidezu`, password `qwerty5575` (Admin). Change it at once: **Admin → Account Management → Change password**.
+New members register on the login page and wait in the Admin panel for approval.
 
-## How your data is protected
-- Passwords are stored as bcrypt hashes for login, plus an encrypted copy so the Admin can use the 👁 View button. The encryption key stays inside the database and is never sent to the website.
-- Visitors can only read games and branding. Creating, editing, deleting games, and every Admin action are checked on the server against a login token. Editing someone else's game is limited to its creator or the Admin.
-- The `anon` key in `config.js` is public by design. It cannot read the user table.
-- Anyone who plays (even a guest) can record a winner for a game, which keeps the winners history working without logins.
+## Game Studio quick guide
+- **Rounds** start with **5 word boxes**. The first box is the word given to players.
+- **＋ word at start** inserts a new first word, **＋ word at end** adds a last word, **−** removes a word.
+- **Quick add** buttons add **1, 5 or 10 rounds** at once.
+- **Sample round**: optional practice round for demonstrating the game (add, edit, **Use example**, or remove).
+- **Auto-reveal interval** is typed in seconds (a warning shows at 10 or more, but you can still save).
+- The **ℹ Info** button on each game shows who created it, the **date created**, and the winners history with the **date each match was won**.
+
+## Host keys on the stage
+Space reveal · → next word/round · ← previous round · H hint · P pause · 1–8 team points (Shift for −1).
 
 ## Good to know
-- Supabase free projects pause after about 1 week with no activity. Open your Supabase dashboard and click **Restore** if the site says it cannot reach the database.
-- Guests can still play the default game when the database is not connected, but results are not saved then.
-- Backups: in Supabase **Table Editor** you can export any table to CSV.
-- Host keys on the game stage: Space reveal · → next word/round · ← previous round · H hint · P pause · 1–8 team points (Shift for −1).
+- Supabase free projects pause after about a week of no activity. If the site says it cannot reach the database, open the Supabase dashboard and click **Restore**.
+- Passwords are stored as bcrypt hashes for login, plus an encrypted copy so the Admin can use the 👁 View button. The key never leaves the database.
+- Anyone who plays (even a guest) can record a winner for a game; creating, editing and deleting games and all Admin actions are checked on the server.
+- The AI Chain Generator is simulated offline using a built-in word list.
