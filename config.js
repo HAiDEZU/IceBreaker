@@ -1,5 +1,5 @@
 // IMPORTANT: SUPABASE_URL must be ONLY like  https://abcdxyz.supabase.co  (no /rest/v1, no dashboard link).
-// Paste your Supabase values here (Supabase dashboard → Project Settings → API).
+// Paste your Supabase values here (Supabase dashboard -> Project Settings -> API).
 // The anon key is meant to be public; the database is protected by the rules in setup.sql.
 window.APP_CONFIG = {
   SUPABASE_URL: "https://gjlemqzvltbaaabbanas.supabase.co",       

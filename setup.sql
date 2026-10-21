@@ -1,5 +1,5 @@
--- Bicutan Bible Church · Word Chain Reaction — database setup
--- Run ONCE in Supabase: SQL Editor → New query → paste all → Run.
+-- Bicutan Bible Church · Word Chain Reaction - database setup
+-- Run ONCE in Supabase: SQL Editor -> New query -> paste all -> Run.
 -- Safe to re-run (it will not overwrite existing users or games).
 
 create extension if not exists pgcrypto with schema extensions;
@@ -238,7 +238,7 @@ grant execute on function public.app_register(text,text,text), public.app_login(
 
 -- ---------- starter data ----------
 -- Default Admin account. Username: haidezu  Password: qwerty5575
--- CHANGE THE PASSWORD right after your first login (Admin panel → Change password).
+-- CHANGE THE PASSWORD right after your first login (Admin panel -> Change password).
 insert into public.app_users(username, name, role, pending, pw_hash, pw_enc)
 values ('haidezu', 'haidezu', 'Admin', false,
         crypt('qwerty5575', gen_salt('bf')), pgp_sym_encrypt('qwerty5575', public.app_secret())::bytea)
@@ -246,6 +246,6 @@ on conflict (username) do nothing;
 
 insert into public.app_games(id, owner, by_name, data)
 values ('default', null, 'Bicutan Bible Church', $game$
-{"title":"Grace Chain Reaction","desc":"The Bicutan Bible Church signature icebreaker: compound-word chains with faith-themed hints.","interval":4,"by":"Bicutan Bible Church","instr":"Connect each word to the next to form a chain! Letters reveal every few seconds. The last letter is always hidden as a \"?\" until guessed!","sample":["FAST","FOOD","CHAIN","SAW","BLADE"],"rounds":[{"words":["SMART","WATCH","LIST","REPORT","WRITING"],"hint":"General Warmup"},{"words":["TIME","SHEET","MASK","POLICY","UPDATE"],"hint":"Life & Stewardship"},{"words":["CAREER","PATHWAY","POINT","SYSTEM"],"hint":"Walking the Path"},{"words":["ZOOM","CALL","CENTER","STAGE","NAME"],"hint":"Fellowship Connections"},{"words":["WORKSPACE","BAR","CODE","NUMBER"],"hint":"Order & Structure"},{"words":["CROSS","WALK","THROUGH","FAITH","STEP"],"hint":"\"We walk only by grace through faith.\""},{"words":["BROKEN","HEART","BEAT","DOWN","LOAD"],"hint":"\"Even the broken are carried by grace.\""},{"words":["FREE","FALL","BACK","TRACK","RECORD"],"hint":"\"Grace covers every fall and every failure.\""},{"words":["LIGHT","WEIGHT","LIFT","OFF","BASE"],"hint":"\"Even when we're off base, He lifts us.\""},{"words":["CROSS","OVER","TIME","LINE","BREAK"],"hint":"\"Grace crosses all boundaries of time.\""}],"results":[]}
+{"title":"Grace Chain Reaction","desc":"The Bicutan Bible Church signature icebreaker: compound-word chains with faith-themed hints.","series":"Word Chain Reaction","sub":"A fellowship icebreaker for all ages","date":"","welcome":"Welcome, Fellowship!","interval":4,"by":"Bicutan Bible Church","instr":"Connect each word to the next to form a chain! Letters reveal every few seconds. The last letter is always hidden as a \"?\" until guessed!","sample":["FAST","FOOD","CHAIN","SAW","BLADE"],"rounds":[{"words":["SMART","WATCH","LIST","REPORT","WRITING"],"hint":"General Warmup"},{"words":["TIME","SHEET","MASK","POLICY","UPDATE"],"hint":"Life & Stewardship"},{"words":["CAREER","PATHWAY","POINT","SYSTEM"],"hint":"Walking the Path"},{"words":["ZOOM","CALL","CENTER","STAGE","NAME"],"hint":"Fellowship Connections"},{"words":["WORKSPACE","BAR","CODE","NUMBER"],"hint":"Order & Structure"},{"words":["CROSS","WALK","THROUGH","FAITH","STEP"],"hint":"\"We walk only by grace through faith.\""},{"words":["BROKEN","HEART","BEAT","DOWN","LOAD"],"hint":"\"Even the broken are carried by grace.\""},{"words":["FREE","FALL","BACK","TRACK","RECORD"],"hint":"\"Grace covers every fall and every failure.\""},{"words":["LIGHT","WEIGHT","LIFT","OFF","BASE"],"hint":"\"Even when we're off base, He lifts us.\""},{"words":["CROSS","OVER","TIME","LINE","BREAK"],"hint":"\"Grace crosses all boundaries of time.\""}],"results":[]}
 
 $game$::jsonb) on conflict (id) do nothing;
