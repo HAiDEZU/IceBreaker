@@ -178,6 +178,8 @@ begin
   u := public.app_user_from_token(p_token);
   if u.id is null then raise exception 'not_authenticated'; end if;
   if gid is null or length(gid) > 64 or coalesce(p_game->>'title','') = '' or length(p_game::text) > 200000 then raise exception 'invalid_input'; end if;
+  -- the game type: "chain" (or missing) or "gimme5"
+  if coalesce(p_game->>'type','chain') not in ('chain','gimme5') then raise exception 'invalid_input'; end if;
   select * into g from public.app_games where id = gid;
   if g.id is null then
     insert into public.app_games(id, owner, by_name, data)
@@ -210,7 +212,7 @@ create or replace function public.app_save_result(p_game_id text, p_result jsonb
 language plpgsql security definer set search_path = public, extensions as
 $$ declare arr jsonb;
 begin
-  if p_result is null or jsonb_typeof(p_result) <> 'object' or length(p_result::text) > 4000 then raise exception 'invalid_input'; end if;
+  if p_result is null or jsonb_typeof(p_result) <> 'object' or length(p_result::text) > 8000 then raise exception 'invalid_input'; end if;
   select coalesce(jsonb_agg(e order by o), '[]'::jsonb) into arr
     from public.app_games g, jsonb_array_elements(coalesce(g.data->'results', '[]'::jsonb)) with ordinality as t(e, o)
    where g.id = p_game_id and (e->>'id') is distinct from (p_result->>'id');
@@ -247,5 +249,12 @@ on conflict (username) do nothing;
 insert into public.app_games(id, owner, by_name, data)
 values ('default', null, 'Bicutan Bible Church', $game$
 {"title":"Grace Chain Reaction","desc":"The Bicutan Bible Church signature icebreaker: compound-word chains with faith-themed hints.","series":"Word Chain Reaction","sub":"A fellowship icebreaker for all ages","date":"","welcome":"Welcome, Fellowship!","interval":4,"by":"Bicutan Bible Church","instr":"Connect each word to the next to form a chain! Letters reveal every few seconds. The last letter is always hidden as a \"?\" until guessed!","sample":["FAST","FOOD","CHAIN","SAW","BLADE"],"rounds":[{"words":["SMART","WATCH","LIST","REPORT","WRITING"],"hint":"General Warmup"},{"words":["TIME","SHEET","MASK","POLICY","UPDATE"],"hint":"Life & Stewardship"},{"words":["CAREER","PATHWAY","POINT","SYSTEM"],"hint":"Walking the Path"},{"words":["ZOOM","CALL","CENTER","STAGE","NAME"],"hint":"Fellowship Connections"},{"words":["WORKSPACE","BAR","CODE","NUMBER"],"hint":"Order & Structure"},{"words":["CROSS","WALK","THROUGH","FAITH","STEP"],"hint":"\"We walk only by grace through faith.\""},{"words":["BROKEN","HEART","BEAT","DOWN","LOAD"],"hint":"\"Even the broken are carried by grace.\""},{"words":["FREE","FALL","BACK","TRACK","RECORD"],"hint":"\"Grace covers every fall and every failure.\""},{"words":["LIGHT","WEIGHT","LIFT","OFF","BASE"],"hint":"\"Even when we're off base, He lifts us.\""},{"words":["CROSS","OVER","TIME","LINE","BREAK"],"hint":"\"Grace crosses all boundaries of time.\""}],"results":[]}
+
+$game$::jsonb) on conflict (id) do nothing;
+
+-- ---------- demo game: Gimme 5 ----------
+insert into public.app_games(id, owner, by_name, data)
+values ('gimme5-demo', null, 'Bicutan Bible Church', $game$
+{"type":"gimme5","title":"Gimme 5 Demo","church":"Bicutan Bible Church","desc":"Two rounds: each team finds the five hidden answers, then the teams that come through play as a pair.","series":"Gimme 5","sub":"A fellowship game for all ages","date":"","welcome":"Welcome, Fellowship!","defaultTeams":2,"instr":"Round 1: each team in turn blind-picks a question, then its members work together to name the five hidden answers before the time runs out. The team that finds all five in the shortest time goes through to Round 2. Round 2: the teams that come through play one after the other, as a pair. The Helper can only say Oo, Hindi or Pwede, and the Guesser finds all five words.","round1":{"members":3,"advance":2,"questions":[{"text":"Ano-anong hayop ang makikita sa farm?","english":false,"seconds":60,"answers":["Baka","Kalabaw","Kabayo","Manok","Baboy"]},{"text":"Name 5 things you can find in a church.","english":true,"seconds":60,"answers":["Cross","Bible","Pulpit","Pews","Altar"]}]},"round2":{"seconds":120,"showWordOnPresent":true,"helperSignals":true,"categories":{"Tao":[["Guro","Pari","Doktor","Pulis","Magsasaka"]],"Bagay":[["Payong","Susi","Salamin","Relo","Sapatos"]],"Hayop":[["Aso","Pusa","Elepante","Leon","Pagong"]],"Lugar":[["Simbahan","Palengke","Paaralan","Ospital","Parke"]],"Pagkain":[["Adobo","Sinigang","Lumpia","Halo-halo","Pandesal"]]}},"by":"Bicutan Bible Church","owner":null,"results":[]}
 
 $game$::jsonb) on conflict (id) do nothing;

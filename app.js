@@ -97,7 +97,7 @@ async function rpc(fn,args){const r=await fetch(API+'rpc/'+fn,{method:'POST',hea
 // Read rows from a public table (games and branding are readable by everyone).
 async function sel(path){const r=await fetch(API+path,{headers:HD()});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 // Initial in-memory state S. Only the theme and login session are kept in this browser; games, users and branding come from the database.
-function load(){let d={};try{d=JSON.parse(localStorage.getItem('bbc2'))||{}}catch(e){}return{users:[],games:REMOTE?[]:[DEF],brand:migrateBrand(BRAND0),theme:d.theme||'dark',stageTheme:d.stageTheme||null,session:d.session||null}}
+function load(){let d={};try{d=JSON.parse(localStorage.getItem('bbc2'))||{}}catch(e){}return{users:[],games:REMOTE?[]:[DEF,G5_DEMO],brand:migrateBrand(BRAND0),theme:d.theme||'dark',stageTheme:d.stageTheme||null,session:d.session||null}}
 let S=load();const save=()=>{try{localStorage.setItem('bbc2',JSON.stringify({theme:S.theme,stageTheme:S.stageTheme,session:S.session}))}catch(e){}};
 let bt=null;const bsave=()=>{save();if(!REMOTE)return;clearTimeout(bt);bt=setTimeout(()=>{bt=null;if(me()&&me().role==='Admin')authed('app_save_brand',{p_brand:S.brand}).catch(x=>toast(emsg(x)))},700)};
 // Friendly text for the error codes raised by the database functions (see setup.sql).
@@ -124,7 +124,12 @@ async function viewPw(id){try{const r=await authed('app_admin_view_password',{p_
 // Admin: ask for a new password and save it.
 function chgPw(id){const p=prompt('New password (4+ characters):');if(p&&p.length>=4)uact(id,'set_password',p)}
 // App start-up: show Loading, fetch data, check the saved login, then show the first screen.
-async function boot(){if(PRESENT_ID)return presentBoot();render();if(REMOTE){try{await pull()}catch(x){err=emsg(x)}
+async function boot(){
+  if(PRESENT_ID)return presentBoot();
+  // the Gimme 5 audience window: index.html#present=<session>
+  const h=location.hash||'';
+  if(h.indexOf('#present=')===0)return presentG5Boot(h.slice(9));
+  render();if(REMOTE){try{await pull()}catch(x){err=emsg(x)}
   if(S.session&&S.session.token){try{const u=await rpc('app_me',{p_token:S.session.token});S.session=u?{...u,token:S.session.token}:null;save()}catch(x){}}
   if(S.session&&S.session.role==='Admin')loadUsers()}
   view=S.session?'lib':'auth';loading=false;render()}
@@ -167,13 +172,14 @@ const fan=()=>[523,659,784,1047].forEach((f,i)=>beep(f,.3,'triangle',i*.12));
    ===================================================================== */
 // Redraw the current screen: top bar plus the active view.
 function render(){brand();if(view==='stage'){renderStage();return}
+  if(view==='stage5'){renderG5();return}
   if(loading){$('#app').innerHTML='<main><p class="lede">Loading...</p></main>';return}
   const b=S.brand,u=me(),pend=S.users.filter(x=>x.pending).length;
   const fade=view!==lastView;lastView=view;
   let h='<nav class="topbar"><div class="wordmark">'+(b.logo?`<img src="${esc(b.logo)}" alt="" onerror="this.style.display='none'">`:`<span class="mark">${markArt()}</span>`)+`<div><span class="wm-name">${esc(b.name)}</span><span class="wm-sub">${esc(b.sub)}</span></div></div>`;
   if(u){h+='<div class="navlinks">';
     h+=`<button class="navlink ${view==='lib'?'on':''}" onclick="go('lib')">Games</button>`;
-    if(canBuild())h+=`<button class="navlink ${view==='studio'?'on':''}" onclick="newGame()">Studio</button>`;
+    if(canBuild())h+=`<button class="navlink ${view==='studio'?'on':''}" onclick="openStudio()">Studio</button>`;
     if(u.role==='Admin')h+=`<button class="navlink ${view==='admin'?'on':''}" onclick="go('admin')">Admin${pend?' <span class="count">'+pend+'</span>':''}</button>`;
     h+='</div>'}
   h+='<div class="navright">';
@@ -199,7 +205,9 @@ function authV(){
   <section class="auth-hero"><div class="mark">${markArt()}</div>
   <h1>Word Chain Reaction</h1>
   <p class="lede">A fellowship icebreaker for teams of all ages. The host reveals one letter at a time and the teams guess the word.</p>
-  <div class="hero-art">${heroArt(5)}</div></section>
+  <div class="previews previews-static">
+    <div class="preview-card"><span class="note">Word Chain Reaction</span><div class="pattern-strip">${heroArt(5)}</div></div>
+    <div class="preview-card"><span class="note">Gimme 5</span><div class="pattern-strip">${g5Preview()}</div></div></div></section>
   <section class="auth-form">
   ${REMOTE?'':'<div class="notice"><svg class="ic"><use href="#i-info"></use></svg><div><b>Database not connected.</b> Guests can still play the default game. To enable accounts, saved games and cross-device sync, add your Supabase keys to <code>config.js</code> (see README).</div></div>'}
   <div data-enter="doUser">${f}</div>
@@ -230,40 +238,53 @@ function logout(){const t=S.session&&S.session.token;if(t&&REMOTE)rpc('app_logou
    Search, filter, play, present, edit, delete and view game info.
    ===================================================================== */
 // Game library screen: one row per game, with the details and the actions.
-function libV(){let gs=S.games.filter(g=>g.title.toLowerCase().includes(q.toLowerCase())&&(flt==='all'||(me()&&g.owner===me().id)));
-  const rows=gs.map(g=>{const w=(g.results||[]).slice(-1)[0];return `<article class="grow">
+function libV(){let gs=S.games.filter(g=>g.title.toLowerCase().includes(q.toLowerCase())&&(flt==='all'||(flt==='mine'&&me()&&g.owner===me().id)||g5Type(g)===flt));
+  const rows=gs.map(g=>{const is5=g5Type(g)==='gimme5';return `<article class="grow">
     <div><h3 class="grow-title">${esc(g.title)}</h3><p class="grow-desc">${esc(g.desc)}</p>
-    <dl class="grow-meta"><div><dt>Rounds</dt><dd>${g.rounds.length}${g.sample?' plus sample':''}</dd></div>
-    <div><dt>Seconds per letter</dt><dd>${g.interval}s</dd></div>
+    <p class="grow-type">${is5?'Gimme 5':'Word Chain Reaction'}</p>
+    <dl class="grow-meta">${is5?`<div><dt>Questions</dt><dd>${(g.round1&&g.round1.questions||[]).length}</dd></div>
+    <div><dt>Seconds per letter</dt><dd>${(g.round2&&g.round2.seconds)||120}s in Round 2</dd></div>`
+    :`<div><dt>Rounds</dt><dd>${g.rounds.length}${g.sample?' plus sample':''}</dd></div>
+    <div><dt>Seconds per letter</dt><dd>${g.interval}s</dd></div>`}
     <div><dt>Created by</dt><dd>${esc(g.by)}</dd></div>
-    <div><dt>Last winner</dt><dd>${w?esc(w.winner)+' ('+w.score+' pts)':'none yet'}</dd></div></dl></div>
-    <div class="grow-actions"><button class="btn pri" onclick="play('${jarg(g.id)}')">Play</button>
+    <div><dt>Last winner</dt><dd>${esc(g5LastLine(g))}</dd></div></dl></div>
+    <div class="grow-actions"><button class="btn pri" onclick="play('${jarg(g.id)}')">${is5?'Play':'Play'}</button>
     <button class="btn" onclick="present('${jarg(g.id)}')">Present</button>
     <button class="link" onclick="infoId='${jarg(g.id)}';render()">Info</button>
     ${canEdit(g)?`<button class="link" onclick="editGame('${jarg(g.id)}')">Edit</button>
     <button class="link dng" onclick="delGame('${jarg(g.id)}')">Delete</button>`:''}</div></article>`}).join('');
   let empty='';
-  if(!gs.length)empty=q?emptyState('search','No games match your search','Clear it, or create a game for the next meeting.','<button class="link" onclick="q=\'\';render()">Clear the search</button>')
+  if(!gs.length)empty=flt==='mine'||flt==='chain'||flt==='gimme5'
+    ?emptyState('search','No games here','This filter has no games yet. Try another filter, or create one.','<button class="link" onclick="flt=\'all\';render()">Show all games</button>')
+    :q?emptyState('search','No games match your search','Clear it, or create a game for the next meeting.','<button class="link" onclick="q=\'\';render()">Clear the search</button>')
     :emptyState('games','No games yet','Create the first one for your next fellowship.',canBuild()?'<button class="btn pri" onclick="newGame()">Create game</button>':'');
-  return `<div class="pattern-strip">${heroArt(2)}</div>
+  return `<div class="previews">
+    <button class="preview-card${flt==='chain'?' on':''}" onclick="flt='chain';render()"><span class="note">Word Chain Reaction</span><div class="pattern-strip">${heroArt(2)}</div></button>
+    <button class="preview-card${flt==='gimme5'?' on':''}" onclick="flt='gimme5';render()"><span class="note">Gimme 5</span><div class="pattern-strip">${g5Preview()}</div></button></div>
   <div class="page-head"><h1>Fellowship games</h1>
-  ${canBuild()&&gs.length?`<div class="row"><button class="btn pri" onclick="newGame()">Create game</button></div>`:''}</div>
+  ${canBuild()?`<div class="row"><button class="btn pri" onclick="newGame()">Create Word Chain Reaction</button><button class="btn" onclick="newGame5()">Create Gimme 5</button></div>`:''}</div>
   <div class="toolbar"><input class="search" placeholder="Search games" value="${esc(q)}" oninput="q=this.value;clearTimeout(window._t);window._t=setTimeout(()=>{render();const i=document.querySelector('main input');i.focus();i.setSelectionRange(q.length,q.length)},250)">
-  <div class="seg seg-sm"><button class="${flt==='all'?'on':''}" onclick="flt='all';render()">All</button>${canBuild()?`<button class="${flt==='mine'?'on':''}" onclick="flt='mine';render()">Mine</button>`:''}</div>
+  <div class="seg seg-sm"><button class="${flt==='all'?'on':''}" onclick="flt='all';render()">All</button>
+  <button class="${flt==='chain'?'on':''}" onclick="flt='chain';render()">Word Chain</button>
+  <button class="${flt==='gimme5'?'on':''}" onclick="flt='gimme5';render()">Gimme 5</button>
+  ${canBuild()?`<button class="${flt==='mine'?'on':''}" onclick="flt='mine';render()">Mine</button>`:''}</div>
   <button class="link" onclick="refresh().then(()=>toast('Games refreshed'))">Refresh</button></div>
   <div class="glist">${rows||empty}</div>${infoModal()}`}
 // Date helpers for the info dialog (created date, and date + time a match was won).
 const fmtDate=t=>t?new Date(t).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}):'-',fmtDateTime=t=>new Date(t).toLocaleString(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 // Dialog with a game's details: creator, date created, and the winners history.
-function infoModal(){if(!infoId)return'';const g=S.games.find(x=>x.id===infoId);if(!g){infoId=null;return''}const rs=(g.results||[]).slice().reverse();
+function infoModal(){if(!infoId)return'';const g=S.games.find(x=>x.id===infoId);if(!g){infoId=null;return''}
+  const is5=g5Type(g)==='gimme5',rs=(g.results||[]).slice().reverse();
   return `<dialog id="info" class="dlg" onclick="if(event.target===this)this.close()" onclose="infoId=null">
   <div class="dlg-head"><h2>${esc(g.title)}</h2><button class="btn btn-sm" onclick="infoId=null;document.getElementById('info').close()" aria-label="Close"><svg class="ic"><use href="#i-close"></use></svg></button></div>
   <div class="dlg-body"><dl class="dlg-facts">
   <div><dt>Created by</dt><dd>${esc(g.by)}</dd></div>
   <div><dt>Date created</dt><dd>${esc(fmtDate(g.created))}</dd></div>
-  <div><dt>Rounds</dt><dd>${g.rounds.length}${g.sample?' plus sample':''}</dd></div>
-  <div><dt>Seconds per letter</dt><dd>${g.interval}s</dd></div></dl>
-  ${rs.length?`<table><thead><tr><th>Date won</th><th>Winner</th><th>Score</th><th>Hosted by</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${esc(fmtDateTime(r.id))}</td><td>${esc(r.winner)}</td><td>${r.score}</td><td>${esc(r.by||'-')}</td></tr>`).join('')}</tbody></table>`:'<p class="meta">No results yet. Winners appear here after a game is finished with scoring on.</p>'}
+  <div><dt>Type</dt><dd>${is5?'Gimme 5':'Word Chain Reaction'}</dd></div>
+  ${is5?`<div><dt>Questions</dt><dd>${(g.round1&&g.round1.questions||[]).length}</dd></div>`:`<div><dt>Rounds</dt><dd>${g.rounds.length}${g.sample?' plus sample':''}</dd></div>`}
+  <div><dt>Seconds per letter</dt><dd>${is5?((g.round2&&g.round2.seconds)||120)+'s in Round 2':g.interval+'s'}</dd></div></dl>
+  <h3>Winners history</h3>
+  ${is5?g5InfoRows(g):(rs.length?`<table><thead><tr><th>Date won</th><th>Winner</th><th>Score</th><th>Hosted by</th></tr></thead><tbody>${rs.map(r=>`<tr><td>${esc(fmtDateTime(r.id))}</td><td>${esc(r.winner)}</td><td>${r.score}</td><td>${esc(r.by||'-')}</td></tr>`).join('')}</tbody></table>`:'<p class="meta">No results yet. Winners appear here after a game is finished with scoring on.</p>')}
   </div></dialog>`}
 // Delete a game (creator or Admin only; checked on the server).
 async function delGame(id){if(confirm('Delete this game?')){try{await authed('app_delete_game',{p_id:id});toast('Game deleted.');await pull();render()}catch(x){toast(emsg(x))}}}
@@ -280,10 +301,13 @@ const WORDS_PER_ROUND=5;    // a new round starts with this many word boxes
 const newRound=()=>({words:Array(WORDS_PER_ROUND).fill(''),hint:''});
 
 // Start a brand-new game in the studio.
-function newGame(){ST={id:null,title:'',desc:'',series:'',sub:'',date:'',welcome:'',interval:4,instr:INSTR,rounds:[newRound()],sample:null,prompt:'',n:5};go('studio')}
+function newGame(){ST5=null;ST={id:null,title:'',desc:'',series:'',sub:'',date:'',welcome:'',interval:4,instr:INSTR,rounds:[newRound()],sample:null,prompt:'',n:5};go('studio')}
+
+// Open the studio on the "what do you want to create" screen.
+function openStudio(){ST=null;ST5=null;go('studio')}
 
 // Load an existing game into the studio for editing.
-function editGame(id){const g=S.games.find(x=>x.id===id);ST={id:g.id,title:g.title,desc:g.desc,series:g.series||'',sub:g.sub||'',date:g.date||'',welcome:g.welcome||'',interval:g.interval,instr:g.instr,rounds:g.rounds.map(r=>({words:[...r.words],hint:r.hint})),sample:g.sample?[...g.sample]:null,prompt:'',n:5};go('studio')}
+function editGame(id){const g=S.games.find(x=>x.id===id);if(!g)return;if(g5Type(g)==='gimme5')return editGame5(id);ST5=null;ST={id:g.id,title:g.title,desc:g.desc,series:g.series||'',sub:g.sub||'',date:g.date||'',welcome:g.welcome||'',interval:g.interval,instr:g.instr,rounds:g.rounds.map(r=>({words:[...r.words],hint:r.hint})),sample:g.sample?[...g.sample]:null,prompt:'',n:5};go('studio')}
 
 // Quick-add 1, 5 or 10 blank rounds. A single untouched blank round is replaced, so "+5 rounds" on a new game gives exactly 5.
 function addRounds(n){if(ST.rounds.length===1&&!ST.rounds[0].hint&&ST.rounds[0].words.every(w=>!w.trim()))ST.rounds=[];for(let i=0;i<n;i++)ST.rounds.push(newRound());render()}
@@ -298,7 +322,24 @@ function wordEditor(p,arr){return `<div class="wrow">
   <button class="btn btn-sm" onclick="${p}.push('');render()"><svg class="ic ic-sm"><use href="#i-plus"></use></svg>Word at end</button></div>`}
 
 // The Game Studio screen: settings, sample round, generator, then the list of rounds.
-function studioV(){return `<div class="studio" data-enter="next">
+// The studio: choose which kind of game to make, or edit the one that is open.
+function studioV(){
+  if(ST5)return studio5V();
+  if(ST)return studioChainV();
+  return `<div class="studio"><h1>Studio</h1>
+  <p class="lede">What do you want to create?</p>
+  <div class="previews">
+    <button class="preview-card" onclick="newGame()"><span class="note">Word Chain Reaction</span>
+    <div class="pattern-strip">${heroArt(2)}</div>
+    <p class="note">A chain of compound words. The host reveals one letter at a time and the teams guess the word.</p></button>
+    <button class="preview-card" onclick="newGame5()"><span class="note">Gimme 5</span>
+    <div class="pattern-strip">${g5Preview()}</div>
+    <p class="note">Five hidden answers to a question, then a Guesser and a Helper find five words from a category.</p></button>
+  </div></div>`}
+
+// The Word Chain studio form.
+function studioChainV(){
+  return `<div class="studio" data-enter="next">
   <h1>Game Studio</h1>
   <div class="sect"><h2>Welcome message</h2>
   <p class="sect-note">Shown on the stage and on the second screen. The welcome stays up until the host begins the first round.</p>
@@ -374,15 +415,17 @@ function adminV(){const b=S.brand;
   <div class="sect"><h2>Account management</h2>
   <div class="tablewrap"><table class="tbl"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Password</th><th>Actions</th></tr></thead>
   <tbody>${rows||'<tr><td colspan="6">Loading accounts...</td></tr>'}</tbody></table></div>
-  ${S.users.some(u=>u.pending)?'':`<div class="empty empty--small">${emptyArt('pending')}<div><h3>No accounts are waiting</h3><p>Nothing needs your approval right now.</p></div></div>`}</div>
-  <div class="sect"><h2>Branding</h2>
-  <div class="field"><span class="label">Palette</span>
-  <div class="palset">${PAL.map((p,i)=>`<button class="pal" onclick="applyPal(${i})" title="${p.n}"><span style="background:${p.base}"></span><span style="background:${p.accent}"></span><em>${p.n}</em></button>`).join('')}</div>
-  <p class="note">A palette sets the base and the accent together. Change either one below to fine tune it.</p></div>
+  ${S.users.some(u=>u.pending)?'':`<p class="admin-empty"><svg class="ic ic-sm"><use href="#i-check"></use></svg>No accounts are waiting for approval.</p>`}</div>
+  <div class="sect"><h2>Identity</h2>
   <div class="brandgrid">
   <div class="field"><label class="label" for="bn">App name</label><input id="bn" value="${esc(b.name)}" oninput="S.brand.name=this.value;bsave();brand()"></div>
   <div class="field"><label class="label" for="bs">Sub-title</label><input id="bs" value="${esc(b.sub)}" oninput="S.brand.sub=this.value;bsave()"></div>
-  <div class="field"><label class="label" for="bl">Logo image URL</label><input id="bl" value="${esc(b.logo)}" placeholder="https://" onchange="S.brand.logo=this.value;bsave();render()"></div>
+  <div class="field"><label class="label" for="bl">Logo image URL</label><input id="bl" value="${esc(b.logo)}" placeholder="https://" onchange="S.brand.logo=this.value;bsave();render()"></div></div></div>
+  <div class="sect"><h2>Colours</h2>
+  <div class="field"><span class="label">Palette</span>
+  <div class="palset">${PAL.map((p,i)=>`<button class="pal" onclick="applyPal(${i})" title="${p.n}"><span style="background:${p.base}"></span><span style="background:${p.accent}"></span><em>${p.n}</em></button>`).join('')}</div>
+  <p class="note">A palette sets the base and the accent together. Change either one below to fine tune it.</p></div>
+  <div class="brandgrid brandgrid-colors">
   <div class="field"><label class="label" for="bb">Base colour</label><div class="colorfield"><input type="color" id="bb" value="${esc(b.base)}" oninput="S.brand.base=this.value;bsave();brand();updPreview();this.nextElementSibling.textContent=this.value.toUpperCase()"><code>${esc(String(b.base).toUpperCase())}</code></div>
   <p class="note">The deep tone behind the app and the stage.</p></div>
   <div class="field"><label class="label" for="ba">Accent colour</label><div class="colorfield"><input type="color" id="ba" value="${esc(b.accent)}" oninput="S.brand.accent=this.value;bsave();brand();updPreview();this.nextElementSibling.textContent=this.value.toUpperCase()"><code>${esc(String(b.accent).toUpperCase())}</code></div>
@@ -399,7 +442,7 @@ function adminV(){const b=S.brand;
 // Random whole number between a and b (inclusive).
 const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 // Open the game stage for a game. Starts at the instructions slide with team setup.
-function play(id){const g=S.games.find(x=>x.id===id);const rs=(g.sample?[{words:g.sample,hint:'Practice Round',sample:true}]:[]).concat(g.rounds);
+function play(id){const g=S.games.find(x=>x.id===id);if(!g)return;if(g5Type(g)==='gimme5')return playG5(id);const rs=(g.sample?[{words:g.sample,hint:'Practice Round',sample:true}]:[]).concat(g.rounds);
   G={g,rs,ri:0,step:'instr',wi:1,rev:0,q:false,full:false,hint:true,sound:true,paused:false,cd:g.interval,flip:false,cols:5,welcome:false,teams:[{name:'Team 1',score:0},{name:'Team 2',score:0}]};view='stage';render();clearInterval(timer);timer=setInterval(tick,1000)}
 // Does this game carry a welcome message?
 const hasWelcome=g=>!!(g&&(g.series||g.sub||g.date||g.welcome));
@@ -469,7 +512,9 @@ function resume(){const g=S.games.find(x=>x.id===G.g.id);if(g)g.results=(g.resul
 function fit(box,avail){const r=G.rs[G.ri],n=r.words.length;
   const h=avail||(box?box.clientHeight-32:innerHeight-320),w=box?box.clientWidth-32:innerWidth-32;
   const byH=h/(n*1.2+(n-1)*.16),byW=w/(G.cols*1.1);
-  return Math.max(18,Math.min(92,byH,byW))}
+  // on the projector screen the tiles may grow much larger
+  const cap=PRESENT_ID?Math.min(innerWidth*.16,innerHeight*.24,260):92;
+  return Math.max(18,Math.min(cap,byH,byW))}
 // Size the tiles to the space the header, the hint line and the host strip leave over.
 function fitTiles(){const st=$('#stage'),ch=st&&st.querySelector('.chain');if(!ch)return;
   const hd=st.querySelector('.stage-top'),ht=st.querySelector('.stage-hint'),ft=st.querySelector('.stage-foot');

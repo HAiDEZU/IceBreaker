@@ -14,6 +14,7 @@
 :root {
   /* Typeface */
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--sans);   /* the display type is the same family, heavier */
 
   /* Type scale, 1.25 from 18px */
   --fs-note: 14px;   /* secondary notes only */
@@ -241,6 +242,17 @@ p:last-child { margin-bottom: 0; }
 .field { margin-bottom: var(--s3); }
 .field:last-child { margin-bottom: 0; }
 
+/* A row of fields: every box in the row is the same width, so the labels and
+   the boxes line up. */
+.formrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+.formrow > .field { margin-bottom: 0; }
+.formrow input, .formrow select, .formrow textarea { width: 100%; }
+
 input[type="text"], input[type="password"], input[type="number"],
 input[type="url"], input:not([type]), textarea, select {
   display: block;
@@ -311,8 +323,7 @@ main {
 
 .wordmark { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; flex: 0 1 auto; }
 .wordmark > div { min-width: 0; overflow: hidden; }
-.wordmark img { width: 40px; height: 40px; object-fit: cover; }
-.mark {
+.wordmark img { width: 40px; height: 40px; object-fit: cover; }.mark {
   display: inline-block;
   width: 36px;
   height: 36px;
@@ -554,12 +565,12 @@ dialog.dlg::backdrop { background: rgba(0, 0, 0, .55); }
 /* ===== 11. ADMIN ==================================================== */
 .admin h1 { margin-bottom: var(--s4); }
 .tablewrap { overflow-x: auto; }
-table.tbl { width: 100%; border-collapse: collapse; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-small); }
 table.tbl th, table.tbl td {
   text-align: left;
   padding: 12px 12px 12px 0;
   border-bottom: 1px solid var(--rule);
-  font-size: var(--fs-small);
+  font-size: inherit;
   vertical-align: middle;
 }
 table.tbl thead th {
@@ -567,7 +578,7 @@ table.tbl thead th {
   top: 0;
   background: var(--paper);
   border-bottom: 1px solid var(--ink);
-  font-size: var(--fs-note);
+  font-size: .875em;
   font-weight: 600;
   color: var(--muted);
   padding-top: 10px;
@@ -623,11 +634,49 @@ tr.pending td { font-weight: 600; }
   flex-direction: column;
 }
 
+/* A Gimme 5 screen is pinned to the window: the panel under it never pushes the
+   page taller, so the audience screen has no page scrollbar. */
+#stage.g5stage { height: 100vh; height: 100dvh; min-height: 0; }
+
+/* The Gimme 5 top bar is a three-part bar on both screens: the name of the game
+   on the left, the countdown in the middle and the church name (on the audience
+   screen) or the round (on the operator's) on the right. */
+#stage.g5stage .stage-top {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: var(--s3);
+}
+#stage.g5stage .stage-title { margin-right: 0; }
+#stage.g5stage .stage-clock { justify-self: center; text-align: center; min-width: 0; }
+#stage.g5stage .stage-meta { justify-self: end; justify-content: flex-end; }
+
+/* When a screen is too tall, the air goes first, then the type (g5FitBox adds
+   this class and shrinks the type until the page fits). */
+.g5stage.g5-tight .g5-play { gap: var(--s2); }
+.g5stage.g5-tight .g5-slots { gap: 4px; }
+.g5stage.g5-tight .g5-slot { min-height: 42px; }
+.g5stage.g5-tight .slide { padding-top: var(--s2); padding-bottom: var(--s2); }
+.g5stage.g5-tight table.tbl th, .g5stage.g5-tight table.tbl td { padding-top: 1px; padding-bottom: 1px; }
+/* the round is already in the top bar: the small label above the heading goes */
+.g5stage.g5-tight .slide .eyebrow { display: none; }
+.g5stage.g5-tight .g5-setup .formrow { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s1) var(--s2); margin-bottom: var(--s1); }
+.g5stage.g5-tight .g5-setup .formrow input, .g5stage.g5-tight .g5-setup .formrow select { min-height: 40px; }
+.g5stage.g5-tight .g5-setup .note { margin: var(--s1) 0; }
+.g5stage.g5-tight .g5-setup-foot { padding-top: var(--s1); }
+.g5stage.g5-tight .slide h1 { margin-bottom: var(--s1); }
+.g5stage.g5-tight .g5-end { gap: var(--s2); margin: var(--s1) 0; }
+.g5stage.g5-tight .g5-end h3 { margin-bottom: 0; }
+.g5stage.g5-tight .g5-resultpage .g5-result { margin: var(--s1) 0; }
+.g5stage.g5-tight .g5-winner { margin-top: var(--s1); gap: 2px; }
+.g5stage.g5-tight .g5-winner-label { font-size: 10px; letter-spacing: .06em; }
+.g5stage.g5-tight .g5-winner-name { padding: var(--s1) var(--s3); }
+.g5stage.g5-tight .slide .actions { margin-top: var(--s1); }
+.g5stage.g5-tight .slide .actions .btn { min-height: 38px; padding-top: 4px; padding-bottom: 4px; }
+
 .stage-top {
   display: flex;
   align-items: center;
   gap: var(--s3);
-  padding: var(--s2) var(--s3);
+  padding: var(--s1) var(--s3);
   border-bottom: 1px solid var(--s-rule);
   flex-wrap: wrap;
 }
@@ -714,6 +763,11 @@ tr.pending td { font-weight: 600; }
 }
 .team { display: inline-flex; align-items: center; gap: 10px; }
 .tname { font-weight: 600; }
+.team.done .tname { color: var(--s-muted); }
+.stage-team {
+  font-size: var(--fs-body); font-weight: 600; color: var(--s-muted);
+  border-left: 1px solid var(--s-rule); padding-left: var(--s2);
+}
 .tscore {
   font-size: var(--fs-h3);
   font-weight: 700;
@@ -750,8 +804,6 @@ tr.pending td { font-weight: 600; }
   align-items: flex-start;
   flex-wrap: wrap;
   gap: var(--s2) var(--s5);
-  border-top: 1px solid var(--s-rule);
-  padding-top: var(--s2);
 }
 .hgroup { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .hlabel {
@@ -820,9 +872,22 @@ tr.pending td { font-weight: 600; }
   min-height: 0;
   overflow: auto;
 }
-.stage-welcome .w-series { font-size: var(--fs-body); color: var(--s-accent); margin: 0; }
-.stage-welcome .w-title { font-size: clamp(30px, 5vw, 54px); margin: 0; color: var(--s-ink); }
-.stage-welcome .w-sub { font-size: var(--fs-h3); color: var(--s-muted); margin: 0; }
+.stage-welcome { justify-content: space-between; }
+.stage-welcome .w-head { text-align: center; }
+.stage-welcome .w-mid { text-align: center; }
+.stage-welcome .w-foot { text-align: center; }
+.stage-welcome .w-mid .w-series {
+  font-size: clamp(26px, 3vw, 44px); font-weight: 700;
+  color: var(--s-ink); margin: 0 0 var(--s2);
+}
+.stage-welcome .w-mid .g5-gamedesc { font-size: var(--fs-body); margin: 0 auto var(--s2); max-width: var(--prose); }
+.stage-welcome .w-foot .g5-gameinstr {
+  font-size: var(--fs-body); color: var(--s-muted); line-height: 1.5;
+  max-width: var(--prose); margin: 0 auto var(--s3);
+}
+.stage-welcome .w-series { font-size: var(--fs-h3); color: var(--s-accent); margin: 0; }
+.stage-welcome .w-title { font-size: clamp(40px, 8vw, 104px); margin: 0; color: var(--s-ink); line-height: 1.05; }
+.stage-welcome .w-sub { font-size: var(--fs-body); color: var(--s-muted); margin: var(--s1) 0 0; }
 .stage-welcome .w-date { font-size: var(--fs-body); color: var(--s-muted); margin: 0; }
 .stage-welcome .w-phrase { font-size: clamp(24px, 4vw, 44px); color: var(--s-gold-text); margin: var(--s1) 0 0; }
 .stage-welcome .btn { margin-top: var(--s2); min-height: 44px; }
@@ -842,7 +907,10 @@ tr.pending td { font-weight: 600; }
 .slide-in { margin: auto 0; width: 100%; }
 .slide h1 { font-size: clamp(36px, 6vw, var(--fs-display)); margin-bottom: var(--s3); }
 .slide .lede { font-size: var(--fs-h3); margin-bottom: var(--s4); max-width: var(--prose); }
-.slide .formrow { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: flex-end; width: 100%; margin-bottom: var(--s3); }
+.slide .formrow {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--s3); align-items: end; width: 100%; margin-bottom: var(--s3);
+}
 .slide .field { flex: 1 1 240px; }
 .slide .actions { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s4); }
 .winnerline {
@@ -860,10 +928,457 @@ tr.pending td { font-weight: 600; }
 .finish-art { width: 260px; margin-bottom: var(--s3); }
 .finish-art svg { width: 100%; height: auto; display: block; }
 
+/* ===== 12a. GIMME 5 =================================================== */
+/* The two game previews, side by side on a wide screen. */
+.previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s3); margin-bottom: var(--s4); }
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  border: 1px solid var(--rule);
+  background: none;
+  padding: var(--s2);
+  text-align: left;
+  cursor: pointer;
+}
+.preview-card:hover { border-color: var(--ink); }
+.preview-card.on { border-color: var(--accent); }
+.previews-static .preview-card { cursor: default; }
+.preview-card .note { display: block; margin-bottom: var(--s1); font-weight: 700; color: var(--ink); }
+.preview-card .pattern-strip { margin-bottom: 0; }
+
+/* Round 1: the question, the five slots, and the operator-only answer list. */
+.g5-play {
+  display: flex; gap: var(--s4); align-items: flex-start;
+  width: 100%; max-width: 1080px; margin: 0 auto;
+  padding: var(--s3); overflow: auto;
+}
+.g5-main { flex: 1; min-width: 0; }
+.g5-qhead { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); flex-wrap: wrap; padding: 2px 8px; }
+.g5-qtext { font-family: var(--font-display); font-size: clamp(26px, 3.6vw, 48px); font-weight: 700; line-height: 1.15; }
+.g5-e {
+  /* inline with the question: it always ends the last line and never takes a
+     line of its own, which would push a scrollbar onto the screen */
+  display: inline-grid; place-items: center; vertical-align: middle;
+  width: 32px; height: 32px; flex: 0 0 auto; margin-left: .35em;
+  border: 2px solid var(--gold-text);
+  color: var(--gold-text);
+  font-weight: 700; font-size: 17px; line-height: 1;
+}
+.g5-slots { display: flex; flex-direction: column; gap: var(--s1); }
+.g5-slot {
+  display: flex; align-items: center; gap: var(--s2);
+  width: 100%; min-height: 58px;
+  border: 2px solid var(--rule);
+  background: none; color: var(--ink);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.g5-slot:hover { border-color: var(--accent); }
+.g5-num {
+  display: grid; place-items: center;
+  width: 46px; align-self: stretch; flex: 0 0 auto;
+  border-right: 2px solid var(--rule);
+  font-weight: 700; color: var(--muted);
+}
+.g5-slot.found .g5-num { background: var(--accent); color: var(--on-accent); border-right-color: var(--accent); }
+/* The answer that was just found comes in with a quick movement of the text. */
+@keyframes g5-answer {
+  0% { color: var(--accent); transform: translateX(14px); opacity: .2; }
+  100% { color: inherit; transform: none; opacity: 1; }
+}
+.g5-slot.fly .g5-ans { animation: g5-answer .45s ease-out; display: inline-block; }
+.g5-slot.revealed .g5-num { background: var(--gold); color: #0A1A12; border-right-color: var(--gold); }
+.g5-ans { flex: 1; padding: 0 var(--s2); font-size: var(--fs-h3); font-weight: 700; }
+.g5-team { font-size: var(--fs-note); color: var(--muted); padding-right: var(--s2); }
+
+/* The operator's own list of answers. It is never sent to the audience screen. */
+.g5-ops {
+  flex: 0 0 300px;
+  border-left: 2px solid var(--gold-text);
+  padding-left: var(--s3);
+}
+.g5-ops-label { display: block; font-size: var(--fs-note); font-weight: 700; color: var(--gold-text); margin-bottom: var(--s1); }
+.g5-ops-who { display: block; font-size: var(--fs-note); color: var(--muted); margin-bottom: var(--s2); }
+.g5-ops ol { list-style: none; margin: 0; padding: 0; }
+.g5-ops li { display: flex; justify-content: space-between; gap: var(--s2); padding: 5px 0; border-bottom: 1px solid var(--rule); }
+.g5-ops li em { font-style: normal; font-size: var(--fs-note); color: var(--muted); }
+.g5-ops-a { font-weight: 700; }
+button.g5-ops-a {
+  background: none; border: 0; padding: 0; margin: 0;
+  color: inherit; font: inherit; font-weight: 700; text-align: left; cursor: pointer;
+}
+button.g5-ops-a:hover { color: var(--accent); }
+.g5-ops li.found .g5-ops-a { color: var(--accent); }
+.g5-ops li.revealed .g5-ops-a { color: var(--gold-text); }
+.g5-ops-word { display: block; font-family: var(--font-display); font-size: clamp(26px, 3vw, 40px); font-weight: 700; color: var(--gold-text); }
+.g5-queue { list-style: none; margin: var(--s1) 0 var(--s2); padding: 0; font-size: var(--fs-small); color: var(--muted); }
+
+/* Round 2: the blind box pick. A wide rectangle, numbered from 1. */
+.g5-boxes {
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--s2); margin: var(--s3) 0;
+}
+.g5-boxrow {
+  display: flex; gap: var(--s2); justify-content: center;
+  flex-wrap: nowrap; max-width: 100%;
+}
+/* The number cards grow with the screen, and the text inside grows with them. */
+.g5-box {
+  --box-w: min(21vw, 270px);
+  --box-h: min(12vw, 158px);
+  /* a row never wraps: the cards shrink instead, so the pyramid holds */
+  flex: 0 1 var(--box-w); min-width: 0;
+  width: var(--box-w); height: var(--box-h);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: 2px solid var(--rule);
+  background: none; color: var(--ink);
+  font: inherit; cursor: pointer; padding: var(--s1) var(--s2); overflow: hidden;
+}
+.g5-box:hover { border-color: var(--accent); }
+.g5-box:disabled { opacity: .55; cursor: default; }
+.g5-box.picked { border-color: var(--accent); background: var(--tint); }
+.g5-box.first { border-color: var(--ink); border-width: 3px; }
+.g5-box-n { font-size: min(5vw, 64px); font-weight: 700; color: var(--muted); line-height: 1; }
+.g5-box-c { font-size: min(1.4vw, 20px); font-weight: 700; text-align: center; line-height: 1.1; }
+
+/* The question or the category flashes for a moment after the blind pick. The
+   flash goes on the body, so a redraw can never play it a second time. The E
+   marker turns dark with it, so it can still be read on the gold, and goes back
+   to gold afterwards. */
+.g5-qhead, .g5-catline { transition: background .3s ease, color .3s ease; }
+.g5-e { transition: border-color .3s ease, color .3s ease; }
+body.g5flash .g5-qhead, body.g5flash .g5-catline { background: var(--gold); color: #0A1A12; }
+body.g5flash .g5-e { border-color: #0A1A12; color: #0A1A12; }
+/* The welcome message on the audience screen. */
+.g5-welcome {
+  text-align: center; display: flex; flex-direction: column;
+  justify-content: space-between; flex: 1; width: 100%; padding: var(--s3) 0;
+}
+.g5-welcome .w-head { text-align: center; }
+.g5-welcome .w-mid { text-align: center; }
+.g5-welcome .w-foot { text-align: center; padding-top: var(--s3); }
+.g5-welcome .w-mid .w-series {
+  font-size: min(3.2vw, 58px); font-weight: 700; color: var(--s-ink); margin: 0 0 var(--s2);
+}
+.g5-welcome .w-mid .g5-gamedesc { font-size: min(2.2vw, 38px); margin: 0 auto var(--s2); max-width: 90%; }
+.g5-welcome .w-foot .g5-gameinstr {
+  font-size: min(1.9vw, 32px); color: var(--s-muted); line-height: 1.4;
+  max-width: 90%; margin: 0 auto;
+}
+.g5-welcome .w-series { font-size: min(2.2vw, 40px); color: var(--s-accent); }
+.g5-welcome .w-sub { font-size: min(2.4vw, 42px); }
+.g5-welcome .w-date { font-size: min(1.8vw, 32px); }
+.g5-welcome .w-phrase { font-size: min(4.6vw, 84px); }
+.g5-welcome .w-title {
+  font-family: var(--font-display); font-size: min(7.6vw, 136px);
+  font-weight: 700; line-height: 1.05; margin: var(--s1) 0;
+}
+.g5-welcome .g5-gamedesc { font-size: min(2.4vw, 42px); margin: 2vh 0 0; }
+.g5-welcome .g5-gameinstr {
+  font-size: min(1.9vw, 32px); color: var(--muted); margin: 1.5vh auto 0;
+  max-width: 90%; line-height: 1.4;
+}
+
+/* Round 2: the five word slots. */
+.g5-words { display: flex; gap: var(--s1); flex-wrap: wrap; }
+.g5-word-slot {
+  display: flex; align-items: center; gap: var(--s1);
+  border: 2px solid var(--rule); min-height: 58px; padding-right: var(--s2);
+}
+.g5-word-slot.found { border-color: var(--accent); }
+.g5-word-slot.found .g5-num { background: var(--accent); color: var(--on-accent); border-right-color: var(--accent); }
+
+/* The end screen: both rounds side by side. */
+/* The end screen: both rounds side by side. */
+.g5-end { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s4); margin: var(--s3) 0; }
+.g5-end h3 { margin-bottom: var(--s1); }
+/* The ranking says who is through: in colour. */
+.tbl tr.qualified td:last-child { color: var(--accent); font-weight: 700; }
+.tbl tr.eliminated td:last-child { color: var(--muted); }
+.tbl tr.qualified td:nth-child(2) { font-weight: 700; }
+.g5-result-q {
+  font-size: var(--fs-h2); font-weight: 700; color: var(--s-ink);
+  margin: 0 0 var(--s3); line-height: 1.2;
+}
+/* The winner of the game: the word above the band, the name in the gold of the
+   English marker inside it. */
+.g5-winner {
+  display: flex; flex-direction: column; align-items: center; gap: var(--s1);
+  width: fit-content; max-width: 100%; margin: var(--s3) auto 0;
+  text-align: center;
+}
+.g5-winner-label {
+  font-size: var(--fs-small); font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink);
+}
+.g5-winner-name {
+  padding: var(--s2) var(--s4);
+  border: 2px solid var(--accent); background: var(--tint);
+  font-family: var(--font-display); font-size: var(--fs-h2); font-weight: 700;
+  line-height: 1.1; color: var(--gold-text);
+}
+
+/* The texts keep the line breaks the host typed in the Studio. */
+.g5-gamedesc, .g5-gameinstr, .g5-welcometext, .lede, .w-series, .w-sub, .w-phrase { white-space: pre-line; }
+.g5-gamedesc, .g5-gameinstr { line-height: 1.5; }
+
+/* The name of the game, in the font the game uses. */
+.g5-gametitle {
+  font-family: var(--font-display); font-size: clamp(34px, 6vw, 72px);
+  line-height: 1.05; margin: 0 0 var(--s2);
+}
+
+/* The setup page: the name of the fellowship on top, the name of the game and
+   what it is about in the middle, the instructions at the bottom. */
+.g5-setup {
+  display: flex; flex-direction: column; min-height: 100%;
+  text-align: center; gap: var(--s4);
+}
+.g5-setup-head .g5-gametitle { margin: 0; }
+.g5-setup-mid { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.g5-welcometext {
+  font-size: clamp(20px, 2.8vw, 40px); color: var(--s-gold-text);
+  margin: 0; font-weight: 600;
+}
+.g5-setup-foot { flex: 0 0 auto; padding-top: var(--s3); }
+.g5-setup-foot .g5-gameinstr {
+  font-size: var(--fs-body); color: var(--s-muted); line-height: 1.5;
+  max-width: var(--prose); margin: 0 auto var(--s3); text-align: center;
+}
+
+/* The blind pick: the name at the top left, the text next to it, and the
+   numbers in the middle. */
+.g5-pick { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.g5-pickhead { display: flex; align-items: baseline; gap: var(--s4); flex: 0 0 auto; }
+.g5-pickhead h1 { margin: 0; }
+.g5-picksub { margin: 0; font-size: var(--fs-body); color: var(--muted); }
+.g5-pick .g5-boxes { flex: 1; align-items: center; margin: var(--s3) 0; }
+.g5-pickwrap { display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%; }
+/* The sub text stands above the cards, and the cards are centred. */
+.g5-pickband {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  align-items: center; gap: var(--s2); min-height: 0; overflow: auto;
+}
+.g5-pickband .g5-picksub { text-align: center; margin: 0; }
+.g5-pickband .g5-boxes { width: 100%; }
+.g5-pickwrap .g5-pickhead { margin-bottom: var(--s2); }
+.g5-pickwrap .g5-picksub { font-size: min(2.2vw, 38px); }
+.g5-pickwrap .g5-boxes { flex: 1; align-items: center; margin: 0; }
+
+/* Round 2: the board. The words wait on the left as cards, the word that is up
+   sits in the middle, and the words that were found stay on the right. There are
+   no frames around the columns: the cards are the only thing that carries a
+   line. */
+.g5-catline {
+  font-size: clamp(26px, 2.4vw, 40px); font-weight: 700; color: var(--gold-text);
+  text-align: center; padding: var(--s1) 0;
+}
+.g5-board {
+  flex: 1; display: flex; flex-direction: column; min-width: 0; width: 100%;
+  overflow: auto;
+}
+.g5-r2 {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.85fr) minmax(240px, 2.4fr) minmax(110px, 0.85fr);
+  gap: var(--s3); width: 100%; padding: var(--s3); align-items: stretch;
+}
+.g5-col { display: flex; flex-direction: column; min-width: 0; }
+.g5-col h3 {
+  font-size: var(--fs-note); font-weight: 700; color: var(--muted);
+  text-align: center; margin-bottom: var(--s2);
+}
+.g5-stack { display: flex; flex-direction: column; gap: var(--s1); }
+.g5-focus { flex: 1; justify-content: center; }
+.g5-count {
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  text-align: center; margin-bottom: var(--s1);
+}
+/* The waiting and the found words are only an indicator: small cards. */
+.g5-small .g5-card { min-height: 30px; font-size: var(--fs-note); padding: 0 var(--s1); gap: var(--s1); }
+.g5-small .g5-card-n { width: 18px; font-size: 11px; }
+.g5-small .g5-card-w { font-size: var(--fs-note); }
+.g5-card {
+  display: flex; align-items: center; gap: var(--s2);
+  min-height: 52px; padding: 0 var(--s2);
+  border: 1px solid var(--rule); background: none; color: var(--ink);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.g5-card:hover { border-color: var(--accent); }
+.g5-card.rev { opacity: .7; cursor: default; }
+.g5-card.done { cursor: default; }
+.g5-card:disabled { opacity: .6; cursor: default; }
+.g5-timenote { margin: var(--s2) 0; }
+.g5-card-n { width: 30px; color: var(--muted); font-weight: 700; flex: 0 0 auto; }
+.g5-card-w { font-weight: 700; min-width: 0; overflow-wrap: break-word; }
+/* The card with the word that is up: the number is in the corner, so the word
+   can use the whole card. */
+.g5-card.big {
+  position: relative;
+  border-color: var(--accent);
+  min-height: min(34vh, 280px); font-size: clamp(34px, 6vw, 92px);
+  justify-content: center; align-items: center; text-align: center;
+  cursor: default; border-width: 2px;
+  padding: var(--s4) var(--s3) var(--s2); overflow: hidden;
+  max-width: 620px; margin: 0 auto; width: 100%;
+}
+.g5-card.big .g5-card-n {
+  position: absolute; top: var(--s1); left: var(--s2);
+  width: auto; font-size: .26em; color: var(--muted); text-align: left;
+}
+.g5-card.big .g5-card-w { line-height: 1.05; }
+.g5-card.big.face .g5-card-w { color: var(--muted); }
+/* The card flies to the middle when its turn comes, and to the right when it is
+   found. */
+@keyframes g5-fly {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: none; }
+}
+.g5-card.fly { animation: g5-fly .26s ease-out; }
+
+/* The result pages are scaled so they fit the screen: the operator never has
+   to scroll down to reach the button. */
+.g5-resultpage .slide-in h1 { font-size: clamp(22px, 3.2vw, 38px); }
+.g5-resultpage .eyebrow { margin-bottom: 0; }
+.g5-resultpage .g5-result-q { font-size: clamp(16px, 2.2vw, 30px); margin-bottom: var(--s2); }
+.g5-resultpage .g5-result { margin: var(--s2) 0; gap: var(--s4); }
+.g5-resultpage .g5-result-big { font-size: clamp(24px, 3.6vw, 52px); }
+.g5-resultpage .g5-found-word { font-size: clamp(15px, 2.2vw, 36px); }
+.g5-resultpage .g5-missed { margin-top: var(--s2); }
+.g5-resultpage .actions { margin-top: var(--s2); }
+.g5-resultpage .g5-end { margin: var(--s2) 0; }
+
+/* The result of one team's round: the time and what they found. */
+.g5-result {
+  display: grid; grid-template-columns: minmax(150px, 1fr) 2fr; gap: var(--s5);
+  align-items: center; margin: var(--s3) 0;
+}
+.g5-result-nums { display: flex; flex-direction: column; gap: var(--s3); }
+/* The question belongs to the answers: it sits in the right-hand column, just
+   above them, and it lines up with the right edge of the answer cards. */
+.g5-result-ans { display: flex; flex-direction: column; gap: var(--s2); min-width: 0; }
+.g5-result-ans .g5-result-q { text-align: right; margin: 0; }
+.g5-result-ans .g5-missed { margin-top: var(--s1); }
+.g5-result-big {
+  display: block; font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 60px); font-weight: 700; line-height: 1.1;
+}
+.g5-found-words { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: flex-end; }
+.g5-found-word {
+  font-family: var(--font-display); font-size: clamp(22px, 3.2vw, 46px);
+  font-weight: 700; border: 1px solid var(--rule); padding: var(--s1) var(--s2);
+}
+.g5-unfound { margin-top: var(--s2); }
+.g5-unfound .label { margin-bottom: var(--s1); }
+.g5-found-word.small {
+  font-size: clamp(15px, 1.7vw, 24px); font-weight: 600;
+  color: var(--muted); border-style: dashed;
+}
+.g5-unfound-n {
+  display: inline-block; min-width: 1.3em; margin-right: 6px;
+  color: var(--muted); font-weight: 700;
+}
+/* The answer that was just revealed comes in with a quick movement. */
+@keyframes g5-reveal {
+  0% { opacity: 0; transform: translateY(-8px); }
+  100% { opacity: 1; transform: none; }
+}
+.g5-found-word.fly { animation: g5-reveal .3s ease-out; }
+.g5-missed { margin-top: var(--s3); }
+.g5-missed .label { text-align: right; }
+.g5-missed .g5-found-word {
+  font-size: clamp(16px, 2vw, 28px); color: var(--muted);
+  border-style: dashed; font-weight: 600;
+}
+
+/* The audience screen. */
+.g5-present-body { position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--s3); padding: var(--s3); }
+.g5-present-word { font-family: var(--font-display); font-size: clamp(36px, 6vw, 84px); font-weight: 700; text-align: center; }
+.g5-present-wait { display: grid; place-items: center; min-height: 60vh; color: var(--muted); font-size: var(--fs-h3); }
+.g5-present-tools { position: fixed; bottom: var(--s2); right: var(--s3); display: flex; gap: var(--s2); z-index: 6; }
+.g5-signal {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  font-family: var(--font-display); font-size: clamp(48px, 9vw, 140px); font-weight: 700;
+  color: var(--gold-text); background: var(--paper);
+  border: 2px solid var(--gold-text); padding: var(--s2) var(--s4); z-index: 7;
+}
+.g5-present { font-size: var(--fs-note); color: var(--muted); }
+.g5-present.on { color: var(--accent); }
+.team.turn { outline: 2px solid var(--accent); outline-offset: 2px; }
+.g5-subinput { margin-top: 6px; }
+
+/* Admin: a compact one line message. */
+.admin-empty { display: flex; align-items: center; gap: 8px; padding: var(--s2) 0; font-size: var(--fs-small); color: var(--muted); }
+.brandgrid-colors { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
 /* ===== 13. THE SECOND SCREEN (present view) ========================= */
-/* The projector window shows the stage only: no navigation, no host controls. */
+/* The projector window shows the stage only: no navigation, no host controls.
+   Everything is sized from the screen, so it reads from the back of the hall. */
 body.present { background: var(--s-paper); }
 body.present #app { min-height: 100vh; }
+body.present .stage-top { padding: 1.4vh 2vw; }
+body.present .stage-title { font-size: min(3.4vw, 56px); }
+body.present .stage-title .by { font-size: min(1.5vw, 26px); }
+body.present .stage-round { font-size: min(2.4vw, 40px); }
+body.present .stage-church { font-size: clamp(26px, 2.4vw, 40px); font-weight: 600; color: var(--s-ink); }
+.stage-church { font-size: var(--fs-h3); font-weight: 600; color: var(--s-ink); }
+body.present .stage-clock { font-size: min(4vw, 68px); min-width: min(12vw, 200px); }
+body.present .stage-hint { font-size: min(3.4vw, 58px); padding-bottom: 2vh; }
+body.present .tname { font-size: min(2.4vw, 40px); }
+body.present .tscore { font-size: min(3.2vw, 54px); min-width: min(6vw, 100px); }
+body.present .sbtn { width: min(7vh, 96px); height: min(7vh, 96px); }
+body.present .g5-qtext { font-size: min(4.6vw, 84px); }
+body.present .g5-e { width: min(6vh, 86px); height: min(6vh, 86px); font-size: min(3.4vh, 52px); }
+body.present .g5-slot { min-height: min(7.6vh, 104px); border-width: 3px; }
+body.present .g5-num { width: min(7vh, 100px); font-size: min(3.2vw, 56px); }
+body.present .g5-ans { font-size: min(4vw, 72px); }
+body.present .g5-team { font-size: min(1.8vw, 30px); }
+body.present .g5-word-slot { min-height: min(9vh, 120px); }
+body.present .g5-present-word { font-size: min(10vw, 180px); }
+body.present .g5-box {
+  --box-w: min(24vw, 320px);
+  --box-h: min(13.5vw, 185px);
+  width: var(--box-w); height: var(--box-h); cursor: default;
+}
+body.present .g5-box-n { font-size: min(6vw, 82px); }
+body.present .g5-box-c { font-size: min(1.9vw, 26px); }
+body.present .g5-boxeshead { font-size: min(2.6vw, 46px); margin: 1vh 0; }
+body.present .g5-result-q { font-size: min(3vw, 52px); margin-bottom: 2vh; }
+body.present .g5-picksub { font-size: min(2.2vw, 38px); color: var(--muted); text-align: center; margin: 0 0 2vh; }
+body.present .g5-result { grid-template-columns: minmax(150px, 1fr) 1.8fr; gap: 2vw; }
+body.present .g5-found-words { gap: 1vw; }
+body.present .g5-found-word { font-size: min(3.4vw, 58px); padding: 0.6vh 1vw; }
+body.present .g5-result-big { font-size: min(6vw, 104px); }
+body.present .g5-result .note { font-size: min(1.8vw, 30px); }
+body.present .tbl { font-size: min(2.4vw, 40px); }
+body.present .tbl th, body.present .tbl td { padding-top: .55vh; padding-bottom: .55vh; }
+body.present .g5-tight .g5-qhead { margin-bottom: var(--s2); }
+body.present .g5-tight .tbl th, body.present .g5-tight .tbl td { padding-top: .3vh; padding-bottom: .3vh; }
+body.present .g5-tight .g5-end { gap: 1.5vw; }
+body.present .g5-tight .g5-winner-name { padding: .5vh 1.4vw; }
+body.present .g5-tight .g5-winner { gap: .6vh; }
+body.present .g5-tight .g5-winner-label { font-size: min(1.3vw, 22px); }
+body.present .g5-tight .g5-present-body { gap: 1.2vh; padding: 1.2vh 1.2vw; }
+body.present .g5-tight .g5-end .tbl th, body.present .g5-tight .g5-end .tbl td { padding-top: .15vh; padding-bottom: .15vh; }
+body.present .g5-tight .g5-end h3 { margin-bottom: 0; }
+body.present .stage-team { font-size: min(2.4vw, 40px); }
+body.present .g5-present-tools { bottom: 1vh; right: 1.5vw; }
+/* They must be findable, not looked at: on a projector they sit almost in the
+   background until the pointer is on them. */
+body.present .g5-present-tools .link {
+  font-size: min(1.5vw, 26px);
+  color: var(--s-muted);
+  opacity: .38;
+  text-decoration: none;
+}
+body.present .g5-present-tools .link:hover,
+body.present .g5-present-tools .link:focus-visible { color: var(--s-ink); opacity: 1; text-decoration: underline; }
+body.present .g5-present-body { gap: 3vh; overflow: auto; }
+/* the final page: the winner is a band at the middle of the bottom */
+body.present .g5-winner { margin-top: auto; gap: 1.4vh; }
+body.present .g5-winner-label { font-size: min(1.8vw, 30px); letter-spacing: .06em; }
+body.present .g5-winner-name { padding: 1.4vh 2.6vw; border-width: 3px; font-size: min(4.4vw, 76px); }
 .present-exit {
   position: fixed;
   bottom: var(--s2);
@@ -894,6 +1409,16 @@ body.present #app { min-height: 100vh; }
   .wrow input { width: 104px; }
   .empty { flex-direction: column; align-items: flex-start; gap: var(--s2); }
   .empty-art { width: 150px; }
+  .g5-play { flex-direction: column; gap: var(--s3); padding: var(--s2); }
+  .g5-ops { flex: 1 1 auto; width: 100%; border-left: 0; border-top: 2px solid var(--gold-text); padding-left: 0; padding-top: var(--s2); }
+  .g5-box { --box-w: min(46vw, 150px); --box-h: min(30vw, 100px); }
+  .g5-box-n { font-size: min(11vw, 34px); }
+  .g5-box-c { font-size: min(3.4vw, 12px); }
+  .g5-r2 { grid-template-columns: 1fr; gap: var(--s2); padding: var(--s2); }
+  .g5-result { grid-template-columns: 1fr; gap: var(--s3); }
+  .g5-found-words { justify-content: flex-start; }
+  .g5-result-ans .g5-result-q { text-align: left; }
+  .previews { grid-template-columns: 1fr; }
   .stage-top { padding: var(--s1) var(--s2); }
   .stage-foot { padding: var(--s1) var(--s2); }
   .stage-keys { display: none; }

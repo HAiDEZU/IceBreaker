@@ -120,3 +120,27 @@ function chainArt(word,c){
   s+='<rect x="'+(mid*(u+0.2*u))+'" y="'+p+'" width="'+u+'" height="'+u+'" style="fill:'+c.gold+';stroke:'+c.gold+';stroke-width:2"/>';
   s+='<path d="M'+(mid*(u+0.2*u)+u*0.26)+' '+(p+u*0.52)+'l'+(u*0.16)+' '+(u*0.18)+'l'+(u*0.34)+' -'+(u*0.38)+'" style="fill:none;stroke:'+(c.onAccent||'#fff')+';stroke-width:'+(u*0.12)+';stroke-linecap:square;stroke-linejoin:miter"/>';
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(w.length*p-(p-u))+' '+h+'" aria-hidden="true" focusable="false" style="width:100%;height:auto;display:block">'+s+'</svg>'}
+
+// The Gimme 5 preview: the question, five answer bars (two revealed) and the
+// five category names. Static, code-drawn, no animation.
+function g5Preview(){
+  const F='font-family:\'IBM Plex Sans\',system-ui,sans-serif';
+  const W=440,BH=28,gap=6;
+  const ans=['BAKA','KALABAW','','',''];
+  const cats=['Tao','Bagay','Hayop','Lugar','Pagkain'];
+  let s='',y=0;
+  s+='<text x="0" y="14" style="'+F+';font-size:15px;font-weight:600;fill:var(--ink)">Ano-anong hayop ang makikita sa farm?</text>';
+  y=28;
+  ans.forEach((a,i)=>{
+    s+='<rect x="0" y="'+y+'" width="'+W+'" height="'+BH+'" style="fill:none;stroke:var(--rule);stroke-width:2"/>';
+    s+='<rect x="0" y="'+y+'" width="'+BH+'" height="'+BH+'" style="fill:'+(a?'var(--accent)':'none')+';stroke:var(--rule);stroke-width:2"/>';
+    s+='<text x="'+(BH/2)+'" y="'+(y+19)+'" text-anchor="middle" style="'+F+';font-size:13px;font-weight:700;fill:'+(a?'var(--on-accent)':'var(--muted)')+'">'+(i+1)+'</text>';
+    if(a)s+='<text x="'+(BH+12)+'" y="'+(y+19)+'" style="'+F+';font-size:14px;font-weight:700;fill:var(--ink)">'+a+'</text>';
+    y+=BH+gap;
+  });
+  y+=10;
+  cats.forEach((c,i)=>{
+    const x=(i%3)*150,yy=y+Math.floor(i/3)*24;
+    s+='<text x="'+x+'" y="'+yy+'" style="'+F+';font-size:13px;font-weight:600;fill:var(--muted)">'+c+'</text>';
+  });
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+(y+30)+'" aria-hidden="true" focusable="false" style="width:100%;height:auto;display:block">'+s+'</svg>'}

@@ -144,7 +144,8 @@ What would I have produced for any similar app? These are the parts I changed.
 | Church mark | `assets/mark.svg` + `markSVG()` | a cross made of tiles on a 5 x 5 grid, the bottom tile a gold `?` outline |
 | Favicon | `assets/favicon.svg` | the mark, tightened for 16 and 32 px, and re-coloured in `brand()` to follow the brand |
 | Touch icon | `assets/apple-touch-icon.png` | the mark, rasterised at 180 x 180 |
-| Hero pattern | `tileHero()` | the Round 6 chain (CROSS, WALK, THROUGH, FAITH, STEP) showing all four tile states; a 2-row crop for the library header |
+| Hero pattern | `tileHero()` | the Round 6 chain (CROSS, WALK, THROUGH, FAITH, STEP) showing all four tile states; 5 rows on the login, a 2-row strip for the Games page |
+| Gimme 5 preview | `g5Preview()` | the farm question, five numbered answer bars (BAKA and KALABAW revealed) and the five category names |
 | Empty states | `emptyArt(kind)` | `games`, `search`, `pending`, `rounds` |
 | Finish art | `chainArt(word)` | a completed chain, the winner's row in gold |
 | Share image | `assets/og-image.svg` + `assets/og-image.png` | the church name, the game name and the hero chain on paper |
